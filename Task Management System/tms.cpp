@@ -80,6 +80,8 @@ class User {
 
         void deleteTask(string taskid);
         void updateTask(string taskid , Editor* editor , string newValue);
+        void markCompleted(Task* task , Status s);
+        void assignToUser(Task* task , User* assignedUser);
 };
 
 
@@ -134,6 +136,10 @@ class Task {
 
         Status getStatus() {
             return status;
+        }
+
+        void setStatus(Status newStatus) {
+            status = newStatus;
         }
 
         void print() {
@@ -214,48 +220,67 @@ void User::updateTask(string taskid , Editor* editor , string newValue) {
 }
 
 
+void User::markCompleted(Task* task , Status s) {
+    task -> setStatus(s);
+}
+
+
+void User::assignToUser(Task* task , User* assignedUser) {
+    this -> deleteTask(task -> getTaskId());
+    assignedUser -> addTask(task);
+}
+ 
+
 int main() {
     // --- create users ---
-    User alice("Alice", {});
-    User bob("Bob", {});
+    User* alice = new User("Alice", {});
+    User* bob = new User("Bob", {});
 
     cout << "=== Task Management System ===\n\n";
 
     // --- create tasks ---
-    Task* t1 = new Task("Design DB schema",  "Draft ER diagram",        "2026-07-01", Priority::HIGH,   Status::PENDING,     &alice);
-    Task* t2 = new Task("Write unit tests",  "Cover all edge cases",    "2026-07-05", Priority::MEDIUM, Status::IN_PROGRESS, &alice);
-    Task* t3 = new Task("Deploy to staging", "Run smoke tests after",   "2026-07-10", Priority::LOW,    Status::PENDING,     &bob);
+    Task* t1 = new Task("Design DB schema",  "Draft ER diagram",        "2026-07-01", Priority::HIGH,   Status::PENDING,     alice);
+    Task* t2 = new Task("Write unit tests",  "Cover all edge cases",    "2026-07-05", Priority::MEDIUM, Status::IN_PROGRESS, alice);
+    Task* t3 = new Task("Deploy to staging", "Run smoke tests after",   "2026-07-10", Priority::LOW,    Status::PENDING,     bob);
 
-    alice.addTask(t1);
-    alice.addTask(t2);
-    bob.addTask(t3);
+    alice -> addTask(t1);
+    alice -> addTask(t2);
+    bob -> addTask(t3);
 
     // --- print initial state ---
     cout << "--- Initial Tasks ---\n";
-    alice.printTasks();
-    bob.printTasks();
+    alice -> markCompleted(t1 , Status::COMPLETED);
+    alice -> printTasks();
+    bob -> printTasks();
+
+    // Assign task t2 to Bob
+    alice -> assignToUser(t2, bob);
+    alice -> printTasks();
+    bob -> printTasks();
 
     // --- update title of t1 ---
     cout << "\n--- Updating title of " << t1 -> getTaskId() << " ---\n";
     EditTitle titleEditor(t1);
-    alice.updateTask(t1 -> getTaskId(), &titleEditor, "Design DB schema (v2)");
-    alice.printTasks();
+    alice -> updateTask(t1 -> getTaskId(), &titleEditor, "Design DB schema (v2)");
+    alice -> printTasks();
 
     // --- update description of t2 ---
     cout << "\n--- Updating description of " << t2 -> getTaskId() << " ---\n";
     EditDescription descEditor(t2);
-    alice.updateTask(t2 -> getTaskId(), &descEditor, "Cover edge cases + integration tests");
-    alice.printTasks();
+    alice -> updateTask(t2 -> getTaskId(), &descEditor, "Cover edge cases + integration tests");
+    alice -> printTasks();
 
     // --- delete t1 ---
     cout << "\n--- Deleting " << t1 -> getTaskId() << " from Alice ---\n";
-    alice.deleteTask(t1 -> getTaskId());
-    alice.printTasks();
+    alice -> deleteTask(t1 -> getTaskId());
+    alice -> printTasks();
 
     // --- cleanup ---
     delete t1;
     delete t2;
     delete t3;
+    delete alice;
+    delete bob;
 
     return 0;
 }
