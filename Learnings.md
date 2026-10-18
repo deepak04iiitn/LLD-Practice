@@ -426,5 +426,47 @@ cout << "Deepak Wallet ID: " << deepakWallet->getWalletId() << "\n";
 
 ---
 
-## 7.
+## 7. Reach for `static` when data or behavior belongs to the class, not to any one object
 
+A normal (non-static) member — variable or method — belongs to *one object*. Each `User` gets its own `name`, each `Room` gets its own `isBooked`. Use `static` instead when something should belong to the *class as a whole*, shared identically across every object of that class.
+
+- **Static variable** — one copy of this value exists, and every object sees the same one. Use it when data should be shared by all objects instead of duplicated per object.
+- **Static method** — a method that doesn't touch any particular object's fields (`this`/instance state). It can be called on the class itself, without needing an object at all.
+
+**Why:** If a value is genuinely a property of one object (a guest's name, a room's price), a normal member is correct. But some things — a running counter used to hand out unique IDs, a constant like "fine per day" that's identical for every fine, a lookup/utility that doesn't depend on any instance's data — aren't really about any single object. Making them `static` says that explicitly: there's one shared value/behavior at the class level, not N duplicate copies living on N objects.
+
+**Example — static variable, a shared ID counter:** [`Stack Overflow/stack-overflow.cpp:12-20`](Stack%20Overflow/stack-overflow.cpp)
+
+```cpp
+class IdGenerator {
+    static int counter;   // one counter, shared by every call — not per-object
+public:
+    static string generate(const string& prefix) {
+        return prefix + to_string(++counter);
+    }
+};
+
+int IdGenerator::counter = 0;   // static members are defined once, outside the class
+```
+
+Every call to `IdGenerator::generate(...)` — for a `Question`, an `Answer`, a `Comment` — increments the *same* `counter`, which is exactly what guarantees the generated IDs never collide. If `counter` weren't static, each object would start counting from its own private zero.
+
+**Example — static constant + static method, no object needed:** [`Library Management Service/lms.cpp:331-343`](Library%20Management%20Service/lms.cpp)
+
+```cpp
+class FineManagementService {
+    private:
+        static const int FINE_PER_DAY = 10;   // same for every fine, every object
+
+        static long calcOverdueDays(time_t dueDate, time_t returnDate) {
+            if (returnDate <= dueDate) return 0;
+            long secondsLate = (long)(returnDate - dueDate);
+            return (secondsLate + 24 * 60 * 60 - 1) / (24 * 60 * 60);
+        }
+    ...
+};
+```
+
+`calcOverdueDays` only works with the two arguments it's given (`dueDate`, `returnDate`) — it never reads or writes any field of a particular `FineManagementService` object. That's the tell that it should be `static`: it's a calculation the *class* knows how to do, not something that depends on which instance you called it on.
+
+**The rule of thumb:** before adding a member, ask "does this differ per object, or is it the same for all of them / independent of any of them?" Per-object → regular member. Shared or object-independent → `static`.
