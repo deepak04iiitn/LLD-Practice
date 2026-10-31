@@ -5,9 +5,6 @@ class User {
     private:
         string userid;
         string name;
-        // vector<Group*>groups;
-        // unordered_map<string , pair<string , int>>mp;   // <groupid , <userid , amount(give) >>
-        // unordered_map<string , pair<string , int>>mp;   // <groupid , <userid , amount(take) >>
 
     public: 
         User(string id , string name) : userid(id) , name(name) {};
